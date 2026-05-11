@@ -7,7 +7,7 @@ const CONFIG = {
   // Contraseñas (login simple en JS)
   PASSWORDS: {
     admin:    'lagunazapotal2026',
-    invitado: 'lagunazapotal2026'
+    invitado: 'usuario2026'
     // Si quieres contraseñas distintas, cámbialas aquí:
     // admin:    'adminpass123',
     // invitado: 'versolopass'
