@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laguna Zapotal — Sistema de Inventario</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="login-page">
+
+  <!-- ============================================================
+    PANTALLA DE LOGIN
+  ============================================================ -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-circle">LZ</div>
+        <h1>Laguna Zapotal</h1>
+        <p>Sistema de Inventario de Campo</p>
+      </div>
+      <div class="login-form">
+        <div class="form-group">
+          <label>Usuario</label>
+          <select id="login-rol">
+            <option value="admin">Administrador</option>
+            <option value="invitado">Invitado (solo lectura)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="login-pass" placeholder="••••••••••••••••"
+                 onkeydown="if(event.key==='Enter') doLogin()">
+        </div>
+        <div id="login-error" class="login-error" style="display:none">
+          Contraseña incorrecta
+        </div>
+        <button class="btn-login" onclick="doLogin()">Ingresar</button>
+      </div>
+      <p class="login-footer">© 2026 Laguna Zapotal · Uso interno</p>
+    </div>
+  </div>
+
+  <!-- ============================================================
+    APP PRINCIPAL (oculta hasta hacer login)
+  ============================================================ -->
+  <div id="app" style="display:none">
+
+    <!-- SIDEBAR -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-circle small">LZ</div>
+        <div>
+          <div class="sidebar-title">Laguna Zapotal</div>
+          <div class="sidebar-subtitle" id="rol-badge">—</div>
+        </div>
+      </div>
+
+      <ul class="nav-menu">
+        <li class="nav-item active" onclick="showTab('dashboard')" id="nav-dashboard">
+          <span class="nav-icon">📊</span> Dashboard
+        </li>
+        <li class="nav-item" onclick="showTab('plano')" id="nav-plano">
+          <span class="nav-icon">🗺️</span> Plano Interactivo
+        </li>
+        <li class="nav-item" onclick="showTab('inventario')" id="nav-inventario">
+          <span class="nav-icon">📦</span> Inventario
+        </li>
+        <li class="nav-item" onclick="showTab('despachos')" id="nav-despachos">
+          <span class="nav-icon">🚚</span> Despachos
+        </li>
+        <li class="nav-item admin-only" onclick="showTab('editar')" id="nav-editar">
+          <span class="nav-icon">✏️</span> Editar Rack
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <button class="btn-sync" onclick="sincronizar()" id="btn-sync">
+          🔄 Sincronizar
+        </button>
+        <div class="sync-status" id="sync-status">Sin sincronizar</div>
+        <button class="btn-logout" onclick="doLogout()">Cerrar sesión</button>
+      </div>
+    </nav>
+
+    <!-- HAMBURGER MOBILE -->
+    <button class="hamburger" onclick="toggleSidebar()" id="hamburger">☰</button>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main id="main-content">
+
+      <!-- TAB: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-section active">
+        <div class="page-header">
+          <h2>Dashboard</h2>
+          <span class="last-sync" id="last-sync-label">—</span>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card" style="--accent:#97D700">
+            <div class="kpi-label">Racks Libres (Casing)</div>
+            <div class="kpi-value" id="kpi-libres">—</div>
+          </div>
+          <div class="kpi-card" style="--accent:#FFD100">
+            <div class="kpi-label">Racks Parciales</div>
+            <div class="kpi-value" id="kpi-parciales">—</div>
+          </div>
+          <div class="kpi-card" style="--accent:#F18448">
+            <div class="kpi-label">Racks Llenos</div>
+            <div class="kpi-value" id="kpi-llenos">—</div>
+          </div>
+          <div class="kpi-card" style="--accent:#1565C0">
+            <div class="kpi-label">Total Tubos</div>
+            <div class="kpi-value" id="kpi-tubos">—</div>
+          </div>
+        </div>
+
+        <!-- Estibado vs Sin Estibar -->
+        <div class="cards-row">
+          <div class="card">
+            <h3>📊 Estibado vs Sin Estibar</h3>
+            <div class="estibado-grid">
+              <div class="estibado-item">
+                <div class="estibado-num" id="est-estibados" style="color:#1565C0">—</div>
+                <div class="estibado-label">Racks Estibados</div>
+                <div class="estibado-sub" id="est-tubos-est">— tubos</div>
+              </div>
+              <div class="estibado-sep"></div>
+              <div class="estibado-item">
+                <div class="estibado-num" id="est-sinest" style="color:#F18448">—</div>
+                <div class="estibado-label">Sin Estibar</div>
+                <div class="estibado-sub" id="est-tubos-sinest">— tubos</div>
+              </div>
+            </div>
+            <div class="progress-wrap">
+              <div class="progress-bar">
+                <div class="progress-fill" id="prog-estibado" style="background:#1565C0;width:0%"></div>
+              </div>
+              <span id="prog-est-label">0% estibado</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>⚙️ Equipos AIB</h3>
+            <div class="aib-stats">
+              <div class="aib-stat"><span class="dot" style="background:#97D700"></span><span id="aib-libre">—</span> Libres</div>
+              <div class="aib-stat"><span class="dot" style="background:#1565C0"></span><span id="aib-uso">—</span> En Uso</div>
+              <div class="aib-stat"><span class="dot" style="background:#4B4F54"></span><span id="aib-mant">—</span> Mantenimiento</div>
+            </div>
+            <div class="progress-wrap" style="margin-top:12px">
+              <div class="progress-bar">
+                <div class="progress-fill" id="prog-aib" style="background:#1565C0;width:0%"></div>
+              </div>
+              <span id="prog-aib-label">0% ocupado</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Despachos resumen -->
+        <div class="card">
+          <h3>🚚 Resumen de Despachos</h3>
+          <div class="kpi-grid" style="margin-top:12px">
+            <div class="kpi-card" style="--accent:#7C3AED">
+              <div class="kpi-label">Despachos Casing</div>
+              <div class="kpi-value" id="kpi-desp-casing">—</div>
+            </div>
+            <div class="kpi-card" style="--accent:#7C3AED">
+              <div class="kpi-label">Tubos Despachados</div>
+              <div class="kpi-value" id="kpi-tubos-desp">—</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB: PLANO -->
+      <section id="tab-plano" class="tab-section">
+        <div class="page-header">
+          <h2>Plano Interactivo</h2>
+          <div class="search-bar-inline">
+            <select id="search-tipo" onchange="limpiarBusqueda()">
+              <option value="casing">Casing</option>
+              <option value="aib">AIB</option>
+            </select>
+            <input type="text" id="search-q1" placeholder="Diámetro o Modelo...">
+            <input type="text" id="search-q2" placeholder="Peso lb/ft (opcional)" id="search-q2-casing">
+            <button onclick="buscarEnPlano()">🔍 Buscar</button>
+            <button onclick="limpiarBusqueda()" class="btn-sec">✕ Limpiar</button>
+          </div>
+        </div>
+        <div id="plano-container">
+          <iframe id="plano-iframe"
+            src="plano.html"
+            frameborder="0"
+            scrolling="yes"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <div id="rack-detail-panel" class="rack-detail" style="display:none">
+          <div class="rack-detail-header">
+            <span id="rd-title">—</span>
+            <button onclick="cerrarDetalle()">✕</button>
+          </div>
+          <div id="rd-body"></div>
+          <div class="rack-detail-btns" id="rd-btns"></div>
+        </div>
+      </section>
+
+      <!-- TAB: INVENTARIO -->
+      <section id="tab-inventario" class="tab-section">
+        <div class="page-header">
+          <h2>Inventario</h2>
+          <div class="filter-row">
+            <select id="inv-tipo" onchange="filtrarInventario()">
+              <option value="casing">Casing</option>
+              <option value="aib">AIB</option>
+            </select>
+            <select id="inv-estado" onchange="filtrarInventario()">
+              <option value="todos">Todos los estados</option>
+              <option value="libre">Libre</option>
+              <option value="parcial">Parcial</option>
+              <option value="lleno">Lleno</option>
+            </select>
+            <select id="inv-pasillo" onchange="filtrarInventario()">
+              <option value="todos">Todos los pasillos</option>
+              <option value="1.1">Pasillo 1.1</option>
+              <option value="1.2">Pasillo 1.2</option>
+              <option value="1.3">Pasillo 1.3</option>
+              <option value="1.4">Pasillo 1.4</option>
+            </select>
+            <input type="text" id="inv-search" placeholder="Buscar..." oninput="filtrarInventario()">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="inv-table">
+            <thead id="inv-thead"></thead>
+            <tbody id="inv-tbody"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="inv-count">0 registros</span>
+        </div>
+      </section>
+
+      <!-- TAB: DESPACHOS -->
+      <section id="tab-despachos" class="tab-section">
+        <div class="page-header">
+          <h2>Historial de Despachos</h2>
+          <div class="filter-row">
+            <select id="desp-tipo" onchange="filtrarDespachos()">
+              <option value="todos">Todos</option>
+              <option value="CASING">Casing</option>
+              <option value="AIB">AIB</option>
+            </select>
+            <input type="text" id="desp-search" placeholder="Buscar rack, destino..."
+                   oninput="filtrarDespachos()">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="desp-table">
+            <thead>
+              <tr>
+                <th>Fecha</th><th>Tipo</th><th>Rack</th>
+                <th>Cantidad</th><th>Stock Antes</th><th>Stock Después</th>
+                <th>Destino</th><th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody id="desp-tbody"></tbody>
+          </table>
+        </div>
+        <div class="table-footer">
+          <span id="desp-count">0 despachos</span>
+        </div>
+      </section>
+
+      <!-- TAB: EDITAR (solo admin) -->
+      <section id="tab-editar" class="tab-section admin-only">
+        <div class="page-header">
+          <h2>Editar Rack</h2>
+        </div>
+        <div class="edit-layout">
+          <div class="card">
+            <h3>Seleccionar Rack</h3>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select id="edit-tipo" onchange="cargarRacksEdit()">
+                <option value="casing">Casing</option>
+                <option value="aib">AIB</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Rack</label>
+              <select id="edit-rack-sel" onchange="cargarDatosRack()">
+                <option value="">— selecciona —</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card" id="edit-form-card" style="display:none">
+            <h3>Datos del Rack <span id="edit-rack-title"></span></h3>
+
+            <!-- Campos Casing -->
+            <div id="edit-fields-casing">
+              <div class="form-group">
+                <label>Estado</label>
+                <select id="ef-estado">
+                  <option value="libre">Libre</option>
+                  <option value="parcial">Parcial</option>
+                  <option value="lleno">Lleno</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Medida de Casing</label>
+                <input type="text" id="ef-medida" placeholder='Ej: 9⅝" · N80'>
+              </div>
+              <div class="form-group">
+                <label>Peso (lb/ft)</label>
+                <input type="text" id="ef-peso" placeholder="Ej: 47">
+              </div>
+              <div class="form-group">
+                <label>Cantidad de Tubos</label>
+                <input type="number" id="ef-cantidad" min="0" placeholder="0"
+                       oninput="actualizarBarraEdit()">
+              </div>
+              <div class="form-group">
+                <label>Capacidad Máxima</label>
+                <input type="number" id="ef-maxima" min="1" placeholder="462">
+              </div>
+              <div class="progress-wrap">
+                <div class="progress-bar">
+                  <div class="progress-fill" id="ef-prog" style="width:0%;background:#97D700"></div>
+                </div>
+                <span id="ef-prog-label">0%</span>
+              </div>
+              <div class="form-group">
+                <label>Estibado</label>
+                <label class="toggle">
+                  <input type="checkbox" id="ef-estibado">
+                  <span class="toggle-slider"></span>
+                  <span class="toggle-label">Posicionado en rack definitivo</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Campos AIB -->
+            <div id="edit-fields-aib" style="display:none">
+              <div class="form-group">
+                <label>Estado</label>
+                <select id="ef-estado-aib">
+                  <option value="libre">Libre</option>
+                  <option value="en_uso">En Uso</option>
+                  <option value="en_mantenimiento">En Mantenimiento</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Modelo AIB</label>
+                <input type="text" id="ef-modelo" placeholder="Ej: GN-60HP Series A">
+              </div>
+              <div class="form-group">
+                <label>N° de Serie</label>
+                <input type="text" id="ef-serie" placeholder="Ej: SN-2024-0341">
+              </div>
+              <div class="form-group">
+                <label>Potencia (HP)</label>
+                <input type="text" id="ef-potencia" placeholder="Ej: 60">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Observaciones</label>
+              <textarea id="ef-obs" rows="3" placeholder="Observaciones opcionales..."></textarea>
+            </div>
+
+            <div class="edit-btns">
+              <button class="btn-save" onclick="guardarRack()">💾 Guardar</button>
+              <div id="save-status" class="save-status"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/inventario.js"></script>
+  <script src="js/despachos.js"></script>
+  <script src="js/editar.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
