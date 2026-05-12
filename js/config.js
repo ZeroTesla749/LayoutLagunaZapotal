@@ -2,7 +2,7 @@
 // CONFIGURACIÓN — edita solo estos valores
 // ================================================================
 const CONFIG = {
-  SHEETS_URL: 'https://script.google.com/macros/s/AKfycbzVaE35-yQX1fAuRmxEEIRwnn8-h1vEq9zh4JxMP9Tfq1mpDGrgUBUXV6MX7iYx4AFi/exec',
+  SHEETS_URL: 'https://script.google.com/macros/s/AKfycbw6DrYYuI5zyIHUwGsFGPXALHZlwaswuxaxow9BNzPUWCSzw7SgfbDNcSUDl3bPuRl0nw/exec',
 
   // Contraseñas (login simple en JS)
   PASSWORDS: {
